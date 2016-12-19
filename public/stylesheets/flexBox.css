@@ -1,0 +1,69 @@
+
+.parentContainer {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    align-content: stretch;
+}
+
+a {
+color: white;
+}
+
+.child{
+    vertical-align: middle;
+    border-left: 1px solid #42B89E;
+    border-bottom: 1px solid #42B89E;
+
+    text-align: center;
+    height: 80px;
+}
+
+#mainDataDiv {
+    border-right: 1px solid #42B89E;
+}
+
+.header{
+    background-color: #42B89E;
+    color: white;
+    height: 40px;
+}
+
+.specs{
+    color: #2f4154;
+    background-color: #f2fffb;
+}
+
+.header-recommend{
+    background-color:#42B89E;
+    color: white;
+    height: 40px;
+    border-radius: 5px;
+}
+
+.specs-recommend{
+    color: #2f4154;
+    background-color: aliceblue;
+    cursor: pointer;
+    cursor: hand;
+}
+
+.selected-recommendation{
+    background-color: lawngreen;
+}
+
+.child-recommend{
+    vertical-align: middle;
+    border-top: 2px solid white;
+    border-left: 4px solid white;
+    border-right: 4px solid white;
+    text-align: center;
+}
+
+.radio-success input[type=radio]:checked ~ .circle {
+    border-color: #42B89E;
+}
+
+.radio-success input[type=radio]:checked ~ .check {
+    background-color: #42B89E;
+}

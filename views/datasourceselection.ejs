@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>Recommender</title>
+    <script src="../bower_components/react/react-dom.js"></script>
+    <script src="../bower_components/react/react.js"></script>
+    <script src="../bower_components/jquery/dist/jquery.js"></script>
+    <script src="../bower_components/babel/browser.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/material.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
+    <script src="../bower_components/bootstrap/dist/js/bootstrap.js"></script>
+
+    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material-fullpalette.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/ripples.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/roboto.css">
+    <link rel='stylesheet' href='/stylesheets/style.css'/>
+    <link rel='stylesheet' href='/stylesheets/flexBox.css'/>
+</head>
+<body>
+<div id="headerdiv" style="display: none;">datasourceselection</div>
+<%include header.ejs%>
+<script type="text/javascript">
+    $( document ).ready(function() {
+        $.material.init();
+        $("#datasetlistmodal").load('datasetlist');
+        $("#datauploadmodal").load('dataupload');
+        $( "#uploadtWarningBtn" ).click(function() {
+
+            $("#uploadtWarning").css("display","none");
+        });
+        $( "#uploadinfoBtn" ).click(function() {
+
+            $("#uploadinfo").css("display","none");
+        });
+    });
+
+</script>
+<div class="row">
+    <div class="col-md-12">
+        <div class="datasourceselection">
+            <%if (uploaderror == "true"){%>
+            <div id="uploadtWarning" class="alert alert-dismissible alert-warning" style="display: block">
+                <button id="uploadtWarningBtn" type="button" class="close" >×</button>
+                <h4>Warning!</h4>
+                <b>Sorry dataset with the same name already exists in our database! Please choose another analysis name.</b>
+            </div>
+            <% } %>
+            <%if (uploaderror == "success"){%>
+            <div id ="uploadinfo" class="alert alert-dismissible alert-info" style="display: block">
+                <button id="uploadinfoBtn" type="button" class="close">×</button>
+                <h4>Information</h4>
+                <b>Data has been uploaded successfully!</b>
+            </div>
+            <% } %>
+            <div class="row">
+                <div class="col-md-6" align="center">
+                    <!--<a href="/dataupload" class="btn btn-info btn-lg">Upload new data set and proceed</a>-->
+                    <button id="selectdataprcd" type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#datasetlist-dialog">Select Data Set and Proceed</button>
+                </div>
+                <div class="col-md-6" align="center">
+                    <!--<a href="/datasetlist" class="btn btn-info btn-lg">Proceed with existing datasets</a>-->
+                    <button id="uploadnewdata" type="button" class="btn btn-info btn-lg" data-toggle="modal" data-target="#dataupload-dialog">Upload new Data Set</button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-10">
+                <a href="/" id ="backbtn" class="btn btn-info">Back</a>
+            </div>
+            <div class="col-md-2">
+
+            </div>
+        </div>
+    </div>
+</div>
+<div id="datasetlist-dialog" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div id="datasetWarning" class="alert alert-dismissible alert-warning" style="display: none">
+                    <button id="datasetWarningBtn" type="button" class="close" >×</button>
+                    <h4>Warning!</h4>
+                    <b>Please select a dataset</b>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">Select DataSet</h4>
+            </div>
+            <div class="modal-body" id="datasetlistmodal">
+
+            </div>
+        </div>
+    </div>
+</div>
+<div id="dataupload-dialog" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title">Upload new DataSet</h4>
+            </div>
+            <div class="modal-body" id="datauploadmodal">
+
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+</html>

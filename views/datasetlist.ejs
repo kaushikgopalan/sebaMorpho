@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Recommender</title>
+    <script src="../bower_components/react/react-dom.js"></script>
+    <script src="../bower_components/react/react.js"></script>
+    <script src="../bower_components/jquery/dist/jquery.js"></script>
+    <script src="../bower_components/babel/browser.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/material.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
+    <script src="../bower_components/bootstrap/dist/js/bootstrap.js"></script>
+
+
+    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material-fullpalette.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/ripples.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/roboto.css">
+
+</head>
+<body>
+<script type="text/javascript">
+    $( document ).ready(function() {
+        $.material.init();
+
+        function getDatasetList(){
+            $.ajax({
+                url : "http://localhost:3000/datasetlist/getList",
+                type: "get",
+                dataType: 'json',
+                success: function(data, textStatus, jqXHR)
+                {
+                    if(data.length >0){
+                        console.log(data)
+                        var listHtml=''
+                        for (i=0;i<data.length;i++){
+                            console.log(data[i].id);
+
+                            $("#radioList").append('<div class="radio radio-success"><label><input type="radio" name="datasetlist" value="'+data[i].text+'" /><span class="circle"></span><span class="check"></span>'+data[i].text+'<p><b>Description:</b>'+data[i].description +'</p></lable></div>')
+                        }
+                        console.log(listHtml);
+
+                    }
+                    else{
+                        $("#submitdiv").css("display","none");
+                        $("#backdiv").css("display","block")
+
+                    }
+
+
+
+                },
+                error: function (jqXHR, textStatus, errorThrown)
+                {
+
+                }
+            });
+        }
+
+        getDatasetList();
+
+        $( "#selectdataset" ).click(function() {
+
+            if($('input[name=datasetlist]:radio:checked').val() === undefined){
+                $("#datasetWarning").css("display","block");
+            }
+            else{
+
+                var formData={selectedProject:$('input[name=datasetlist]:radio:checked').val()};
+                console.log(formData);
+                $.ajax({
+                    url : "http://localhost:3000/datasetlist/setDataSet",
+                    type: "POST",
+                    data : formData,
+                    success: function(data, textStatus, jqXHR)
+                    {
+                        console.log(data);
+                        if(data.status == true){
+                            location.href = "http://localhost:3000/coloumnpreprocessor";
+                        }
+
+                    },
+                    error: function (jqXHR, textStatus, errorThrown)
+                    {
+
+                    }
+                });
+
+            }
+        });
+
+        $( "#deldataset" ).click(function() {
+
+            if($('input[name=datasetlist]:radio:checked').val() === undefined){
+                $("#datasetWarning").css("display","block");
+            }
+            else{
+
+                var formData={selectedProject:$('input[name=datasetlist]:radio:checked').val()};
+                console.log(formData);
+                $.ajax({
+                    url : "http://localhost:3000/datasourceselection/deleteProject",
+                    type: "POST",
+                    data : formData,
+                    success: function(data, textStatus, jqXHR)
+                    {
+                        console.log(data);
+                        if(data.status == true){
+                            $("#radioList").empty();
+                            getDatasetList();
+                        }
+
+                    },
+                    error: function (jqXHR, textStatus, errorThrown)
+                    {
+
+                    }
+                });
+
+            }
+        });
+
+        $( "#datasetWarningBtn" ).click(function() {
+
+            $("#datasetWarning").css("display","none");
+        });
+
+    });
+</script>
+
+<div id="datasetWarning" class="alert alert-dismissible alert-warning" style="display: none">
+    <button id="datasetWarningBtn" type="button" class="close" >×</button>
+    <h4>Warning!</h4>
+    <b>Please select a dataset</b>
+</div>
+
+<div class="row">
+
+    <div class="col-md-12">
+        <div class="">
+            <div id="radioList"class="sample1" style="max-height: 200px; overflow-y: auto">
+
+            </div>
+
+            <div class="row" id="submitdiv" style="display: block">
+                <div class="col-md-6">
+                    <button id="selectdataset" class="btn btn-success">Select and Proceed<div class="ripple-wrapper"></div></button>
+                </div>
+                <div class="col-md-6">
+                    <button id="deldataset" class="btn btn-success">Delete Dataset <div class="ripple-wrapper"></div></button>
+                </div>
+            </div>
+            <div class="row" id="backdiv" style="display: none">
+                <div class="col-md-12">
+                    <p class="text-info">No Dataset available,Please upload a new one!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+</body>
+
+</html>

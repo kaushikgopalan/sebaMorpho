@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Recommender</title>
+    <script src="../bower_components/jquery/dist/jquery.js"></script>
+    <script src="../bower_components/babel/browser.js"></script>
+    <script src="../bower_components/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/material.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
+    <script src="../bower_components/jquery-validation/dist/jquery.validate.js"></script>
+    <script src="../bower_components/Sortable/Sortable.js"></script>
+    <script src="../bower_components/pleasejs/dist/Please.js"></script>
+    <script src="../bower_components/chance/chance.js"></script>
+    <script src="../bower_components/elessar/dist/elessar.js"></script>
+
+
+    <link rel="" media="screen" href="../bower_components/flat-ui/fonts/glyphicons/flat-ui-icons-regular.ttf">
+    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/ripples.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material-fullpalette.css">
+
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/roboto.css">
+    <link rel="" media="screen" href="../bower_components/bootstrap-material-design/fonts/Material-Design-Icons.svg">
+    <link rel='stylesheet' href='/stylesheets/style.css'/>
+    <link rel='stylesheet' href='/stylesheets/flexBox.css'/>
+    <style>
+        ul {
+            list-style-type: none;
+        }
+    </style>
+
+
+</head>
+
+<script type="text/javascript">
+    var mainData;// use this to alter the json in the client side.
+    var mapMaindata = new Map();
+    var divColors = new Array(); // used to create the divColors for Ordinal data.
+    var removedDivIds = new Set();
+    var rangeBars;
+    //var RangeBar = require('elessar');
+    //r= require(['elessar'], function(RangeBar) { values:[0,5,6],min:0,max:15, allowDelete: true, allowSwap: true});
+    $('#numericDiv').append("hello here");
+
+
+    $(document).ready(function () {
+
+        $.material.init();
+
+        $.ajax({
+            url: '/column_values_dragdrop/column_values_dragdrop_post',
+            type: 'GET',
+            success: function (data, textStatus, jqXHR) {
+                console.log("success post column_values_dragdrop");
+                var htmlData = '';
+                if (data) {
+
+                    mainData = data;
+                    for (var i = 0; i < mainData.values.length; i++) {
+                        mapMaindata.set(mainData.values[i].value, -1);
+                        //console.log('i=' + i + ' and item: ' + mapMaindata.get(mainData.values[i].value));
+                        //console.log('something here');
+
+                    }
+
+                    var tempValues = mapMaindata.keys();
+                    // loop to parse thru maps
+
+                    if (data.dataType == 'numeric') {
+                        numericDivCreator(mainData);
+                    }
+                    else {
+                        ordinalDivCreator(mainData);
+                    }
+
+                }
+            },
+
+            error: function (jqXHR, textStatus, errorThrown) {
+
+            }
+        });
+
+    });
+
+
+</script>
+
+
+<body>
+<div id="headerdiv" style="display: none;">columnDragDrop</div>
+<% include header.ejs %>
+<!--<form class="bs-component"  >-->
+<div class="row">
+    <div class="col-md-12">
+        <div class="well bs-component" style="min-height:350px">
+            <br><br>
+
+            <div id="warning" class="alert alert-dismissible alert-warning" style="display: none">
+                <button id="warningBtn" type="button" class="close">×</button>
+                <h4>Warning!</h4>
+
+                <div id="warningMessage"></div>
+            </div>
+            <div class="row panel-info" id="numericDiv" style="display:none;">
+
+                <div class="col-md-3"></div>
+                <div class="col-md-6 panel-info">
+                    <div class="panel-heading">
+                        Priority for Nominal Data
+                    </div>
+
+                    <div class="row " id="numericRadioDiv">
+                        <div class="col-md-12">
+                            <div style=" border-style: solid; border-width: 1px; border-color: lightblue">
+                                <div class="radio radio-primary">
+                                    <label>
+                                        <input type="radio" name="optionsRadios" id="optionsRadios1" value="option1"
+                                               checked="" onclick="numericJsonReturn('asc');">
+
+                                        <div id="asc"></div>
+                                    </label>
+                                </div>
+                                <div class="radio radio-primary">
+                                    <label>
+                                        <input type="radio" name="optionsRadios" id="optionsRadios2" value="option2"
+                                               onclick="numericJsonReturn('dsc')">
+
+                                        <div id="dsc"></div>
+                                    </label>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    <br>
+                    <div id="numericRangeBar" > </div>
+                    <br><br><br>
+
+
+                </div>
+
+            </div>
+
+            <div class="row" id="ordinalDiv" style="display:none">
+                <div class="col-md-11 panel-body">
+
+                    <div class="row">
+                        <div class="col-md-8"></div>
+                        <div class="label-info col-md-4" style="color:white">
+                                <i>
+                                    Group the Elements with decreasing priority.
+                                    Elements placed in the same group have same priority.
+                                    Group names are editable.
+                                </i>
+                        </div>
+                    </div>
+                    <br><br> 
+                    <div class="row" id="headSortableDiv">
+                        <div class="col-md-2">
+                        </div>
+                        <div class="col-md-4 ">
+                            <div id="initDiv" class="panel panel-info" style="max-height:300px;overflow-y: auto">
+                                <div class="panel-heading "> Available elements</div>
+
+                                <div>
+                                    <ul id="initOrdinalList" style="min-height:80px"
+                                        ondrop="javascript:listParentUpdater('initOrdinalList')">
+
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                        </div>
+                        <div id="positionedDiv" class="col-md-3 container" style="max-height:400px;overflow-y: auto">
+                            <div id="position1" class="panel panel-info" style="background-color:lightseagreen">
+                                <!--<div class="panel-heading"> Group Elements Here</div>-->
+                                <!--<div class="form-group ">-->
+                                <!--<input class="form-control" style="padding-left:20px" placeholder="Label for Group 1" id="groupInput1" type="text">-->
+                                <!---->
+                                <!--</div>-->
+                                <div class="label-info h4" id="groupInput1" style="padding-top:3px;padding-bottom:3px; padding-left: 30px; margin-top: 0px; color:white; " contenteditable="true">Group Here</div>
+                                <ul id="positionedList1" style="min-height:80px"
+                                    ondrop="javascript:listParentUpdater('positionedList1')"></ul>
+
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <a id="addnewgroup" href="javascript:newDivCreator(this)" class="btn btn-raised btn-success"
+                               style="margin-top: 0px">Add New Group</a>
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+            <br><br><br><br>
+
+            <div class="row button" id="buttonsDiv">
+                <div class="col-md-2">
+                    <a id="backbtn3" href="/coloumnpreprocessor" class="btn btn-raised btn-info">Back</a>
+                </div>
+                <div class="col-md-8">
+                </div>
+                <div class="col-md-2">
+                    <a id="gotorecommender" href="javascript:nextStep()" class="btn btn-raised btn-info">Next Step</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+<script>
+    //var initDiv=$('#initDiv');
+    //var positionedDiv=$('#positionedDiv');
+    // // <li id="emptyForRemove" class="alert-info"> Add your elements here</li>
+    var currentDiv = "position1";
+
+    function sortableCaller() {
+        var initOrdinalList = document.getElementById("initOrdinalList");
+        var positionedList1 = document.getElementById("positionedList1");
+
+        var initDiv = document.getElementById("initDiv");
+        var positionedDiv = document.getElementById("positionedDiv");// used for adding new element using newPosition
+
+        createSortableElement(initOrdinalList, 'sortableList');
+        createSortableElement(positionedList1, 'sortableList');
+        createSortableElement(initDiv, 'headSortableDiv', 'TitleElement');
+        createSortableElement(document.getElementById('position1'), 'headSortableDiv', 'TitleElement');
+
+
+    }// end function sortableCaller().
+
+    function createSortableElement(divId, groupId, handleElement) {
+
+
+        Sortable.create(divId, {
+            group: '' + groupId,
+            animation: 150,
+            handle: handleElement,
+            filter: '.panel-heading',
+            onAdd: function (evt) {
+                console.log('add for div: ' + divId.id);
+                // logic for handling empty element and removing was here.
+                console.log('createsortableElement onAdd:' + divId + ' for group:' + groupId, evt.item);
+                console.log(this);
+                //console.log(this.el.parentElement.id);
+            },
+            onUpdate: function (evt) {
+                console.log('createsortableElement onUpdate:' + divId + ' for group:' + groupId, evt.item);
+            },
+            onRemove: function (evt) {
+                console.log('createsortableElement onRemove:' + divId + ' for group:' + groupId, evt.item);
+            },
+            onStart: function (evt) {
+                console.log('createsortableElement onStart:' + divId + ' for group:' + groupId, evt.item);
+            },
+            onEnd: function (evt) {
+                console.log('createsortableElement onEnd:' + divId + ' for group:' + groupId, evt.item);
+                //console.log(this);
+                //console.log('parent: '+this.el.parentElement.id);
+
+            }
+        });
+    }// end fucntion sortableCaller().
+
+    function listParentUpdater(elementId) {
+        console.log('listParentUpdater: ' + elementId);
+        var divCount = elementId.substring(elementId.length - 1);
+        var listElement = document.getElementById(elementId);
+        for (var i = 0; i < listElement.children.length; i++) {
+            console.log('element now is : ');
+            console.log(listElement.getElementsByTagName('li')[i]);
+            if (listElement.getElementsByTagName('li')[i]) {
+                var innerValue = listElement.getElementsByTagName('li')[i].innerHTML;
+                console.log('innerValue ' + innerValue);
+                console.log('current value in mapmaindata: ' + mapMaindata.get(innerValue));
+                console.log('divcount: ' + divCount);
+                mapMaindata.set(innerValue, divCount);
+            }
+
+        }
+
+    }// end function listParentUpdater.
+
+    $("#warningBtn").click(function () {
+
+        $("#warning").css("display", "none");
+    });
+
+
+    function nextStep(){
+        if (mainData.dataType != 'numeric') {
+            var initElement = document.getElementById('initOrdinalList')
+            var countOfDiv = currentDiv.substr(currentDiv.length - 1);
+
+            for (var i = 1; i <= countOfDiv; i++) {
+                if ($('#position' + i).length) {
+                    listParentUpdater('positionedList' + i);
+                    if (!$.trim($('#groupInput' + i).html()).length) {
+                        $('#warningMessage').text("Enter Group label for group: " + i + " before proceeding");
+                        $('#warning').css("display", "block");
+                        return;
+                    }
+                    if (!document.getElementById('groupInput' + i).value) {
+                        // for checking of input value..
+                    }
+                }
+
+            }
+
+        }
+        else{
+            console.log('rangebar value:');
+            console.log(rangeBars);
+
+            var rangeVal=rangeBars.val();
+            console.log(rangeVal);
+            console.log(rangeBars.val());
+            //for(var i=0;i<rangeBars)
+            //mainData.values[0]
+            for(var i=0;i<rangeVal.length;i++){
+                var tempArray={};
+                var tempValues=rangeVal[i];
+                console.log(tempValues);
+                if ($('#optionsRadios1').prop("checked")){
+                    tempArray.acv=i;
+                }
+                else if($('#optionsRadios2').prop("checked")){
+                    tempArray.acv=rangeVal.length - i;
+                }
+                //tempArray.acv=i;
+                tempArray.label=tempValues[0]+' - '+tempValues[1];
+                tempArray.color=divColors[i];
+                console.log('div colors:')
+                console.log(divColors[i]);
+                tempArray.minVal=tempValues[0];
+                tempArray.maxVal=tempValues[1];
+                mainData.values.push(tempArray);
+                //console.log(mainData.values[i]);
+            }
+
+                console.log('main data:');
+
+                console.log(mainData.values);
+                mainData.values.splice(0,2);
+                console.log('after splice');
+                console.log(mainData.values);
+        }
+
+        for (i = 0; i < mainData.values.length; i++) {
+            console.log('maindata value at ' + i);
+            console.log(mapMaindata.get(mainData.values[i].value) + '   ... ' + mainData.values[i].acv);
+
+
+            if (mainData.dataType != 'numeric') {
+                mainData.values[i].acv = mapMaindata.get(mainData.values[i].value);
+                //if(mainData.values[i].)
+                if(mainData.values[i].acv==-1){
+                    mainData.values[i].label= "Unassigned group";
+                    mainData.values[i].color='#48D1CC';
+                }
+                else{
+                    var label = document.getElementById('groupInput' + mainData.values[i].acv).innerHTML;
+                    console.log('label: ' + label);
+                    mainData.values[i].label = label;
+                    mainData.values[i].color=$('#position'+mainData.values[i].acv).css('background-color');
+                }
+
+
+            }
+            else {
+                if ($('#optionsRadios1').prop("checked")){
+                    //numericJsonReturn('asc');
+                    console.log('inside nextstep and in numeric selection. asc passed');
+                }
+
+                else if($('#optionsRadios2').prop("checked")){
+                   // numericJsonReturn('dsc');
+                    console.log('inside nextstep and in numeric selection. dsc passed');
+                }
+
+
+            }
+
+        }
+        console.log("main data: ");
+        console.log(mainData);
+        console.log(JSON.stringify(mainData));
+        $.ajax({
+            url: '/column_values_dragdrop/column_values_dragdrop_result',
+            type: 'POST',
+            data: JSON.stringify(mainData),
+            contentType: "application/json; charset=utf-8",
+            //contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function (data, textStatus, jqXHR) {
+                console.log("success post column_values_result");
+                window.location = '/recommender';
+            },
+
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.log('something went wrong here..');
+            }
+        });
+
+    }// end of nextStep.
+
+    // generates the color to be used for the new groups that are created.
+    //
+    function colorGenerator() {
+        var divColorsInitial=['lightcoral','lightgreen','lightskyblue','peru','lightseagreen'];
+        var divColorsTemp;
+        var colorsReturned;
+        divColors=['#ff6600','#90EE90','#ff33ba','#CD853F','#20B2AA'];
+        //divColors.push.apply(divColors,divColorsInitial);
+        if(mainData.values.length>5)
+            colorsReturned=Math.floor((mainData.values.length -divColorsInitial.length)/divColorsInitial.length);
+        else if(mainData.dataType=='numeric'){
+            colorsReturned=20;
+        }
+        else{
+            colorsReturned=5;
+            console.log(divColors);
+            return;
+        }
+        console.log('colors REturned value: '+colorsReturned);
+        console.log(divColorsInitial);
+
+        for(var i=0;i<5;i++){
+            divColorsTemp=Please.make_color({
+                golden: true,
+                base_color: divColorsInitial[i],
+                grayscale: true,
+                colors_returned: colorsReturned
+
+            });
+            divColors.push.apply(divColors,divColorsTemp);
+        }
+
+        // console.log(divColors);
+        console.log(divColors);
+    }// end function colorGenerator().
+
+    // used to create the dynamic divisions which are used for grouping elements.
+    //
+    function newDivCreator(evt) {
+        var counter = currentDiv.substr(8, currentDiv.length - 1);
+        //console.log("counter is: " + counter);
+        counter++;
+        var newDiv = '<div id="position' + counter + '" class="panel panel-info"';
+        newDiv += ' style="background-color:' + divColors[counter % mainData.values.length] + '">';
+        //newDiv += '<div class="panel-heading" > ';
+
+        newDiv += '<div class="row label-primary  " style="margin:0px">';
+        newDiv += '<div class="h4 col-md-9" style=" padding-top:3px;padding-bottom:3px;  padding-left: 30px; margin-top: 0px; color:white" contenteditable="true" ';
+        newDiv += 'id="groupInput' + counter + '" >New Group </div>';
+        newDiv += '<div class="col-md-3"> <a href="javascript:divRemover(position' + counter + ' )" ';
+        newDiv += '<span class="glyphicon glyphicon-remove " aria-hidden="true"></span> </a></div></div>';
+
+        //newDiv += '<input class="form-control" placeholder="Label for Group '+counter+'" style="padding-left:20px" id="groupInput' + counter + '" type="text">';
+        //newDiv+='</div>';
+        newDiv += '<ul id="positionedList' + counter + '" style="min-height:80px" ondrop="javascript:listParentUpdater(\'positionedList' + counter + '\')">';
+        //newDiv += '<div class="" ><a href="javascript:divRemover(position' + counter + ' )"  class="btn- btn-raised btn-sm">Delete Selection';
+        newDiv += '<div class="ripple-container"></div></a></div></div>';
+        var tempDiv = document.getElementById('positionedDiv');
+        //tempDiv.append(newDiv);
+        $('#positionedDiv').append(newDiv);
+
+        console.log('new Div:' + newDiv);
+        //console.log('child new div appended here');
+        createSortableElement(document.getElementById('position' + counter), 'sortableDiv', 'title-heading');
+        createSortableElement(document.getElementById('positionedList' + counter), 'sortableList', '', 'position' + counter);
+
+        currentDiv = 'position' + counter;
+
+    }// end function newDivCreator.
+
+    // To delete the dynamic divs
+    function divRemover(divElement) {
+        //console.log('called by element ' + divElement.id);
+        var toDelete = document.getElementById(divElement.id);
+        var initDiv = document.getElementById("initDiv");
+        var toMove = toDelete.children;
+        var listElements;
+        //console.log('tomove elements ');
+        //console.log(toMove);
+
+        for (var i = 0; i < toMove.length; i++) {
+            if (toMove[i].tagName == 'UL')
+                listElements = toMove[i].children;
+        }
+//        console.log('listElements ');
+//        console.log(listElements);
+        toMove[0].style.backgroundColor = '';
+
+        $("#initOrdinalList").append(listElements);
+        $("#" + divElement.id).remove();
+
+    }
+
+    // Create the entire ordinal Division. We used this function to segregate the creation of
+    // ordinal and numeric view logic.
+    function ordinalDivCreator(data) {
+        colorGenerator();
+        document.getElementById('ordinalDiv').style.display = 'block';
+        document.getElementById('numericDiv').innerHTML = "";
+        var txt = '';//'<div class="table-bordered " ><thead><div class=" row"><div class="col-md-2 text-center">Name</div><div class="col-md-6 text-center">Value</div></div></thead><br><br>';
+
+        var columnValues = data.values;
+        //console.log(columnValues);
+        for (var i = 0; i < columnValues.length; i++) {
+            console.log(columnValues[i]);
+            // commented because trying drag and drop here
+            txt += '<li class="dropdown-menu-inverse">' + columnValues[i].value + '</li>';
+
+        }
+        //console.log(txt);
+        $('#initOrdinalList').append(txt);
+        sortableCaller();
+    }// end function OrdinalDivCreator.
+
+    // To create the numeric divisions.
+    function numericDivCreator(data) {
+        colorGenerator();
+        document.getElementById('numericDiv').style.display = 'block';
+        document.getElementById('ordinalDiv').innerHTML = "";
+
+        //console.log('numeric element here');
+        var txt = '';//'<div class="table-bordered " ><thead><div class=" row"><div class="col-md-2 text-center">Name</div><div class="col-md-6 text-center">Value</div></div></thead><br><br>';
+        var columnValues = data.values;
+        //console.log(columnValues);
+//        for (var i = 0; i < columnValues.length; i++) {
+//            console.log(columnValues[i]);
+//            // commented because trying drag and drop here
+//            txt += '<li class="">' + columnValues[i].value + '</li>';
+//
+//        }
+
+        $('#initNumericList').append(txt);
+        $('#asc').append('<b> ' + columnValues[0].value + '</b> is better than <b> ' + columnValues[1].value + '</b>');
+        $('#dsc').append('<b> ' + columnValues[1].value + '</b> is better than <b> ' + columnValues[0].value + '</b>');
+        //$('#numericRadioDiv').append(txt2);
+        numericRangeBarDraw('asc',columnValues[0].value ,columnValues[1].value );
+
+    }// end function numericDivCreator.
+
+    function numericRangeBarDraw(ascOrDsc,minVal,maxVal){
+
+        $('#numericRangeBar').empty();
+        console.log('inside numeric draw. ');
+        console.log('min and max:'+minVal+"  "+maxVal);
+        console.log('rangeBars value:');
+        console.log(rangeBars);
+        if(rangeBars!=null)
+                console.log(rangeBars.val());
+        var midVal;
+        var snapVal;
+        if(minVal>maxVal){
+            midVal=minVal/2;
+            snapVal=Math.min(.5,minVal/10);
+            snapVal=snapVal.toFixed(2);
+        }
+
+        else {
+            midVal=maxVal/2;
+            snapVal=Math.min(0.5, (maxVal/10));
+            snapVal=snapVal.toFixed(2);
+
+        }
+        console.log("snapVal: "+snapVal+" ")
+        rangeBars=RangeBar({
+            min: minVal,//moment().startOf('day').format('LLLL'),
+            max: maxVal,//moment().startOf('day').add(1, 'day').format('LLLL'),
+            valueFormat: function(ts) {
+                return ts;//moment(ts).format('LLLL');
+            },
+            valueParse: function(date) {
+                return date;//moment(date).valueOf();
+            },
+            values: [
+                [
+                    minVal,//moment().startOf('day').format('LLLL'),
+                    midVal//moment().startOf('day').add(1, 'hours').format('LLLL')
+                ],
+
+
+
+            ],
+            htmlLabel: true, // if true, range labels are written as html
+            allowSwap: true,
+            label: function(a){
+                console.log('label is:'+a);
+                console.log(a[0]+ '  '+a[1]);
+                return JSON.stringify(a[0]+' To '+a[1])},
+            snap: snapVal,//1000 * 60 * 15,
+            minSize: snapVal*1,//1000 * 60 * 60,
+
+            allowDelete:true,
+            indicator:null
+//                    function(bar, indicator, recalc) {
+//                if(recalc) setInterval(recalc, 500);
+//                return recalc;//moment().hours(Math.floor(24 * Math.random())).format('LLLL');
+//            }
+        }).on('changing', function(ev, ranges, changed) {
+            console.log(changed);
+            $('pre.changing').html(JSON.stringify(ranges,null,2));
+        }).on('change', function(ev, ranges, changed) {
+            console.log(changed);
+            $('pre.changing').after($('<pre>').html('changed'+JSON.stringify(ranges,null,2)));
+        })
+        var rangeBarElement= rangeBars.$el;
+        $('#numericRangeBar').append(rangeBarElement);
+
+
+    }// end function numericRangeBar.
+
+    // this returns just the inverted values when ascending or descding is chosen in the check boxes.
+    function numericJsonReturn(ascOrDsc) {
+        var minVal,maxVal;
+        if (ascOrDsc == 'asc') {
+            mainData.values[0].acv = "1"; // mainData.values[0].value;
+            mainData.values[1].acv = "2"; // mainData.values[1].value;
+            minVal=mainData.values[0].value;
+            maxVal=mainData.values[1].value;
+            console.log('numeric json. asc selected');
+        }
+        else {
+            mainData.values[0].acv = "2"; // mainData.values[1].value;
+            mainData.values[1].acv = "1"; // mainData.values[0].value;
+            minVal=mainData.values[0].value;
+            maxVal=mainData.values[1].value;// changed so that we dont swap the values instead just redraw
+            console.log('numeric json. dsc selected');
+
+        }
+        console.log('calling the numeric range draw from NumericJsonReturn.');
+        numericRangeBarDraw(ascOrDsc,minVal,maxVal);
+        console.log(mainData.values);
+    }// end function numericJsonReturn.
+
+
+   function tempFunction(){
+       for(var i=0;i<rangeVal.length;i++){
+           if (i+1 <length){
+               if (rangeVal[i+1][0] - rangeVal[i][1] > 0)
+                    ;
+           }
+       }
+   }
+</script>
+</html>

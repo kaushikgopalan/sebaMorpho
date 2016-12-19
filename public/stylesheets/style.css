@@ -1,0 +1,249 @@
+/* Font */
+@font-face {
+font-family: "Proxima Nova Light";
+src: url(../fonts/ProximaNova-Light.otf); }
+
+@font-face {
+font-family: "Proxima Nova Regular";
+src: url(../fonts/ProximaNova-Regular.otf); }
+
+html, body, h1, h2, h3, h4, h5, h6 {
+  font-family: "Proxima Nova Light";
+}
+
+/* start.ejs view */
+
+html, body {
+  font-family: "Proxima Nova Light";
+  background-color: white;
+  width: 100%;
+  margin: 0px;
+  padding: 0px;
+  overflow-x: hidden;
+}
+
+body .well {
+    -webkit-box-shadow: 0 0 0 0;
+    box-shadow: 0 0 0 0;
+}
+
+.navbar{
+  margin-bottom: 0px!important;
+  background-image: url(../images/header_bg.png);
+  background-size: cover;
+  width: 100%;
+}
+
+#registerlink {
+  margin-top: 15px;
+}
+
+#registerconfirm {
+  margin-top: 15px;
+  margin-left: 90px;
+}
+/* datasourceselection.ejs view */
+
+
+#uploadinfoBtn, #uploadtWarningBtn, #selectdataprcd, #uploadnewdata, #selectdataset, #recommendBtn, #addnewgroup, #deldataset {
+font-family: "Proxima Nova Regular";
+color: white;
+font-size: 18px;
+background-color: #41B99F;
+margin-top: 20px;
+padding: 10px 17px;
+border-radius: 5px;
+}
+
+#startproceed, #backbtn, #backbtn2, #backbtn3, #selectperfcol, #gotorecommender, #cancel {
+font-family: "Proxima Nova Regular";
+color: #42B89E;
+background-color: #FFFFFF;
+padding: 6px 22px;
+border: 1px solid #42B89E;
+border-radius: 5px;
+  -webkit-box-shadow: 0 0 0 0;
+  box-shadow: 0 0 0 0;
+}
+
+#logoutbox {
+  display: inline;
+  float: right;
+  margin-top: 15px;
+}
+
+#btn-logout {
+font-family: "Proxima Nova Regular";
+color: #42B89E;
+background-color: #FFFFFF;
+padding: 3px 15px;
+margin: 0px;
+}
+
+.row {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
+button#selectperfcol {
+    float: right;
+}
+
+.signuplink {
+
+}
+
+.datasourceselection {
+  margin-top: 30px;
+}
+
+.panel {
+    -webkit-box-shadow: 0 0 0 0;
+  box-shadow: 0 0 0 0;
+}
+
+.panel-info {
+  border-color: #42B89E;
+}
+
+.panel-info > .panel-heading {
+  background-color: #42B89E;
+}
+
+.ui-state-active, .ui-widget-content .ui-state-active, .ui-widget-header .ui-state-active {
+  background-color: #42B89E;
+  border: none;
+}
+
+.ui-widget-header {
+  border: none;
+  background: none;
+}
+
+
+.elessar-handle {
+  display: block;
+  background: black;
+  height: 100%;
+  width: 5px;
+  cursor: ew-resize;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.elessar-handle:first-child {
+  left: 0;
+}
+.elessar-handle:last-child {
+  right: 0;
+}
+.elessar-vertical .elessar-handle {
+  height: 5px;
+  width: 100%;
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: auto;
+}
+.elessar-vertical .elessar-handle:first-child {
+  top: 0;
+}
+.elessar-vertical .elessar-handle:last-child {
+  bottom: 0;
+}
+.elessar-indicator {
+  position: absolute;
+  background: black;
+  border-color: white;
+  border-style: solid;
+  border-width: 0 0px;
+  width: 2px;
+  height: 100%;
+  z-index: 15;
+}
+.elessar-vertical .elessar-indicator {
+  width: 100%;
+  height: 2px;
+}
+.elessar-range {
+  position: absolute;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+  cursor: grab;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #32e384;
+  width: 0;
+  z-index: 10;
+}
+.elessar-vertical .elessar-range {
+  width: auto;
+  height: 0;
+}
+.elessar-label {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  border-left: 1px solid #999;
+  padding-left: 10px;
+}
+.elessar-readonly {
+  opacity: 0.6;
+  cursor: default !important;
+}
+.elessar-phantom {
+  background-color: transparent;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  cursor: pointer !important;
+}
+.elessar-rangebar {
+  position: relative;
+  height: 30px;
+  line-height: 30px;
+  background: #ccc;
+  text-align: center;
+}
+.elessar-delete-confirm {
+  background: red;
+}
+body.elessar-resizing, body.elessar-dragging {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+body.elessar-resizing,
+body.elessar-resizing .bar,
+body.elessar-resizing .handle {
+  cursor: ew-resize !important;
+
+}
+body.elessar-dragging,
+body.elessar-dragging .bar,
+body.elessar-dragging .handle {
+  cursor: -webkit-grabbing !important;
+  cursor: -moz-grabbing !important;
+  cursor: grabbing !important;
+}
+
+#legend-container{
+  margin-top:-10px;
+}
+
+.legend-div{
+  float:left;
+  width:10px;
+  height:10px;
+  margin-left:15px;
+  border: 1px solid black;
+}
+
+.legend-text{
+  float:left;
+  margin-top:-3px;
+  margin-left:5px;
+}

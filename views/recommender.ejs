@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="utf-8">
+    <title>Recommender</title>
+    <script src="../bower_components/react/react-dom.js"></script>
+    <script src="../bower_components/react/react.js"></script>
+    <script src="../bower_components/jquery/dist/jquery.js"></script>
+    <script src="../bower_components/babel/browser.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/material.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
+    <script src="../bower_components/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="../bower_components/jquery-ui/jquery-ui.js"></script>
+    <script src="/javascripts/d3.v3.min.js" charset="utf-8"></script>
+    <script src="/javascripts/d3.parsets.js"></script>
+    <script src="/javascripts/highlight.min.js"></script>
+    <script src="/javascripts/d3.parcoords.js"></script>
+    <script src="/javascripts/d3.svg.multibrush.js"></script>
+
+    <link rel="stylesheet" href="../bower_components/jquery-ui/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material-fullpalette.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/ripples.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/roboto.css">
+    <link rel='stylesheet' href='/stylesheets/flexBox.css' />
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href='/stylesheets/d3.parsets.css' />
+    <link rel='stylesheet' href='/stylesheets/d3.parcoords.css' />
+
+</head>
+<body>
+<div id="headerdiv" style="display: none;">recommender</div>
+<%include header.ejs%>
+<script type="text/javascript">
+    var configData;
+    var groupData;
+    var columnData;
+    var selectedItems = {};
+    var color = new Array();
+    var groupNames = new Array();
+    $( document ).ready(function() {
+
+        $( "#tabs" ).tabs();
+        $.material.init();
+        $.ajax({
+            url: 'http://localhost:3000/recommender/get-data',
+            dataType: 'json',
+            cache: false,
+            success: function(data) {
+                configData = data.configData;
+                groupData = data.groupData;
+                columnData = data.columnData;
+                for (var i=0;i<groupData.values.length;i++) {
+                    if (color.indexOf(groupData.values[i].color)==-1) {
+                        color.push(groupData.values[i].color);
+                        groupNames.push(groupData.values[i].label);
+                        $('#legend-container').append('<div class="legend-div" style="background:'+groupData.values[i].color+'"></div><p class="legend-text">'+groupData.values[i].label+'</p>');
+                    }
+                }
+                $('#legend-container').append('<div class="legend-div" style="background:rgba(160, 160, 160, 0.5)"></div><p class="legend-text">Neglect</p>');
+                $('#legend-container').append('<div class="legend-div" style="background:lawngreen"></div><p class="legend-text">Selected</p>');
+                $('#legend-container').append('<div class="legend-div" style="background:aliceblue"></div><p class="legend-text">Filtered out</p>');
+                $('#legend-container').append('<div class="legend-div" style="background:rgb(160, 160, 160)"></div><p class="legend-text">Not Possible</p>');
+                color.push("rgba(160, 160, 160, 0.5)");
+                groupNames.push("Neglect");
+                for (var i=0;i<data.columnData.length;i++) {
+                    selectedItems[data.columnData[i].column_header.name]=new Array();
+                }
+                //console.log(selectedItems);
+                var datahtml='';
+                var colhtml='';
+                for (i=0;i<data.columnData.length;i++){
+                    var datahtml='';
+                    var colhtml='';
+                    // console.log(data[i].column_header.name);
+                    var colData =data.columnData[i].column_data;
+                    datahtml= datahtml+('<div class ="child-recommend header-recommend tile-title"  id="'+ data.columnData[i].column_header.id +'">'+ data.columnData[i].column_header.name +'</div>');
+                    for(j=0;j<colData.length;j++){
+                        //  console.log(colData[j].value);
+                        colhtml=colhtml+('<div class ="child-recommend specs-recommend" id="'+colData[j].id+'" isSelected="false" isNotPossible="false" column="'+data.columnData[i].column_header.name+'" type="'+data.columnData[i].column_header.type+'">'+colData[j].value +'</div>');
+                    }
+                    var htmlDivs = '<div class="divcover" filtered="false">'+datahtml+colhtml +'</div>';
+                    $("#mainDataDiv").append(htmlDivs);
+                }
+                drawOverview();
+                recommend(configData, columnData, selectedItems);
+                
+            }.bind(this),
+            error: function(xhr, status, err) {
+                console.error(this.props.url, status, err.toString());
+            }.bind(this)
+        });
+        $('.parentContainer').on('click', '.specs-recommend', function(){
+            // do something
+            //console.log('inside');
+            //console.log();
+            var column = $(this).attr('column');
+            var datatype = $(this).attr('type');
+            var item;
+            if (datatype === "number") {
+                item = parseFloat($(this).text());
+            } else {
+                item = $(this).text();
+            }
+            if($(this).attr('isSelected') == 'false' && $(this).attr('isNotPossible') == 'false')
+            {
+                selectedItems[column].push(item);
+                //console.log(selectedItems);
+                $(this).addClass( "selected-recommendation" );
+                $(this).attr('isSelected','true')
+            } else if($(this).attr('isSelected') == 'true'){
+                console.log(selectedItems);
+                var index = selectedItems[column].indexOf(item);
+                if (index > -1) {
+                    selectedItems[column].splice(index, 1);
+                }
+                //console.log(selectedItems);
+                $(this).removeClass( "selected-recommendation" );
+                $(this).attr('isSelected','false')
+            }
+            var filteredData = filter(selectedItems, configData, 1);
+            
+            //console.log(filteredData);
+            recommend(filteredData, columnData, selectedItems);
+            //console.log(columnData);
+        });
+        function filter(selectedItems, configData, flag) {
+            //console.log(selectedItems);
+            return configData.filter(function (el) {
+                var flag={};
+                for (var i=0;i<columnData.length;i++) {
+                    prop = columnData[i].column_header.name;
+                    flag[prop]=1;
+                    if(selectedItems[prop].length>0){
+                        if(selectedItems[prop].indexOf(el[prop])==-1){
+                            flag[prop]=0;
+                        }
+                    }
+                }
+                for (var key in flag) {
+                    if (flag[key]==0) {
+                        return false;
+                        break;
+                    } 
+                }
+                return true;
+            });
+        }
+        function recommend(filteredData, columnData, selectedItems) {
+            for (var i=0;i<columnData.length;i++) {
+                
+                for (var j=0;j<columnData[i].column_data.length;j++) {
+                    var div = $('#'+columnData[i].column_data[j].id);
+                    if (div.attr('isSelected') == 'false') {
+                        div.css("background","aliceblue");
+                    } else if(div.attr('isSelected') == 'true') {
+                        div.css("background","lawngreen");
+                    }
+                }
+                if (selectedItems[columnData[i].column_header.name].length==0) {
+                    for (var j=0;j<columnData[i].column_data.length;j++) {
+                        var selectedTemp = selectedItems;
+                        selectedTemp[columnData[i].column_header.name].push(columnData[i].column_data[j].value);
+                        var futureItems = filter(selectedTemp, filteredData, 0);
+                        selectedTemp[columnData[i].column_header.name].pop();
+                        columnData[i].column_data[j].ratio = calculateRatio(futureItems, filteredData.length);
+                        var count = 0;
+                        var percentTotal = 0;
+                        var colorString = "";
+                        var percentString = "";
+                        for (var h in columnData[i].column_data[j].ratio.percent) {
+                            colorString = colorString + ", "+color[count]+" "+percentTotal+"%";
+                            percentTotal = percentTotal + columnData[i].column_data[j].ratio.percent[h];
+                            percentString = percentString + groupNames[count]+": "+ columnData[i].column_data[j].ratio.percent[h]+"%\n";
+                            colorString = colorString + ", "+color[count]+" "+percentTotal+"%";
+                            count++;
+                        }
+                        
+                        if (columnData[i].column_data[j].ratio.percent["lost"] == 100) {
+                            $("#"+columnData[i].column_data[j].id).css("background","rgb(160, 160, 160)");
+                            $("#"+columnData[i].column_data[j].id).attr('isNotPossible','true');
+                        } else {
+                            $("#"+columnData[i].column_data[j].id).css("background","linear-gradient(to right"+colorString+")");
+                            $("#"+columnData[i].column_data[j].id).attr('isNotPossible','false');
+                        }
+                        $("#"+columnData[i].column_data[j].id).attr("title",percentString);
+                        
+                    }
+                }
+            }
+        }
+        function calculateRatio(futureItems, countTotal) {
+            var ratio = {count:{}, percent: {}};
+            for (var k=0;k<groupData.values.length;k++) {
+                ratio.count[groupData.values[k].acv]=0;
+            }
+            for (var k=0;k<groupData.values.length;k++) {
+                ratio.count[groupData.values[k].acv] += futureItems.filter(function (el) {
+                    if (groupData.dataType=="ordinal") {
+                        if(el[groupData.columnName]==groupData.values[k].value){
+                          return true;
+                        } else{
+                          return false
+                        }
+                    } else if (groupData.dataType == "numeric") {
+                        if(parseFloat(el[groupData.columnName])>=groupData.values[k].minVal && parseFloat(el[groupData.columnName])<=groupData.values[k].maxVal){
+                          return true;
+                        } else{
+                          return false
+                        }
+                    }
+                    
+                }).length;
+            }
+           
+            var total = 0;
+            for (var key in ratio.count) {
+                total = total + ratio.count[key];
+            }
+            ratio.count.lost = countTotal-total;
+            for (var key in ratio.count) {
+                ratio.percent[key] = Math.round((ratio.count[key]/countTotal) * 100);
+            }
+            return ratio;
+        }
+        function drawVisualization(dimensions, filename){
+            //console.log(dimensions);
+            //console.log(filename);
+            var ht=window.screen.availHeight;
+            var width=window.screen.availWidth;
+            var chart = d3.parsets()
+                    .dimensions(dimensions)
+                    .width(width-200)
+                    .height(ht).tension(0.3);
+            var vis = d3.select("#vis").append("svg")
+                    .attr("width", chart.width())
+                    .attr("height", chart.height());
+
+            d3.json("../data?filename="+filename+"", function(error, csv) {
+                vis.datum(csv).call(chart);
+            });
+        }
+        //on click of submit button
+        $( "#recommendBtn" ).click(function() {
+            if( $('div[isselected="true"]').length >0){
+                var selectedElements=[];
+                $('#selecteditemsdiv').empty();
+                
+                $('#vis').empty();
+               // $("#recommend-matrix").css("display","none");
+                $("#recommend-graph").css("display","block");
+                var itemsHtml = '';
+                $('div[isselected="true"]').each(function() {
+                    console.log($( this ).text());
+                    selectedElements.push($( this ).attr('id'));
+                    itemsHtml =itemsHtml +('<span class="label label-default">'+$( this ).text() +'</span>&nbsp;&nbsp;')
+                });
+                $('#selecteditemsdiv').append(itemsHtml);
+                //dimennsions = ["Company Name", "Phone Name", "Camera", "Clock Rate", "Battery Capacity", "Multiple SIM Cards"]
+                //fileName = 'data1.csv'
+               // drawVisualization(dimennsions, fileName);
+                console.log(selectedElements);
+                var data =
+                {
+                    "selected_items": selectedElements
+                }
+                $.ajax({
+                    url : "http://localhost:3000/recommender/prepareJson",
+                    type: "POST",
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    data : JSON.stringify(data),
+                    cache: false,
+                    success: function(data, textStatus, jqXHR)
+                    {
+                        
+                        
+                        //console.log(data.filename);
+                        //console.log(data.columns);
+                        if(data.success == true){
+                         //drawVisualization(data.columns, data.filename);
+                            $('#jsonData').attr("href", "../data?filename="+data.filename);
+                            $('#csvData').attr("href", "../data/csvFile?filename="+data.filename);
+                            drawParallelCoordinates(data.filename);
+                            //$('#ui-id-1').trigger('click');
+                            $('html, body').animate({ scrollTop: $('#recommend-graph').offset().top }, 'slow');
+                        }
+                        else{
+                            $("#visualizationWarning").css("display","block");
+                        }
+
+                    },
+                    error: function (jqXHR, textStatus, errorThrown)
+                    {
+
+                    }
+                });
+
+
+
+            }
+            else{
+                $("#recommendertWarning").css("display","block");
+            }
+
+        });
+
+        $( "#recommendBackBtn" ).click(function() {
+            selectedItems=[];
+           // $("#recommend-matrix").css("display","block");
+           // $("#recommend-graph").css("display","none");
+        });
+        $( "#recommenderWarningBtn" ).click(function() {
+
+            $("#recommendertWarning").css("display","none");
+        });
+        $( "#visualizationWarningBtn" ).click(function() {
+
+            $("#visualizationWarning").css("display","none");
+        });
+        var icons = {
+            header: "ui-icon-circle-arrow-e",
+            activeHeader: "ui-icon-circle-arrow-s"
+        };
+        $( "#accordion" ).accordion({
+            collapsible: true,
+            heightStyle: "content",
+            icons: icons
+        });
+    });
+
+    function drawParallelCoordinates(filename){
+        d3.json("../data?filename="+filename+"", function(data) {
+            
+            $.ajax({
+                url : "http://localhost:3000/recommender/get-parallel-coords-column-metadata",
+                type: "GET",
+                cache: false,
+                success: function(colData, textStatus, jqXHR)
+                {
+                    var colors = new Array();
+                    for (var i=0;i<data.length;i++) {
+                        for(j=0;j<groupData.values.length;j++){
+                            if(data[i][groupData.columnName]==groupData.values[j].label){
+                                if (colors.indexOf(groupData.values[j].color)==-1) {
+                                    colors.push(groupData.values[j].color);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                
+                    var colorgen = d3.scale.ordinal()
+                    .range(colors);
+                    var color = function(data) { return colorgen(data[colData.dimensions[0]]); };
+                    
+                    $("#indepthparcoods").html("");
+                    //console.log(colData.color);
+                    //console.log(data)
+                    var parcoords = d3.parcoords()("#indepthparcoods")
+                            .data(data)
+                            //.hideAxis(["_id"])
+                            .types(colData.types)
+                            .dimensions(colData.dimensions)
+                            .color(color)
+                            .alpha(1)
+                            .composite("darken")
+                            .margin({ top: 24, left: 20, bottom: 20, right: 10 })
+                            .mode("queue")
+                            .render()
+                            .brushMode("1D-axes-multi")
+                            .alphaOnBrushed(0.2)
+                            .reorderable()
+                            ;
+
+                    parcoords.svg.selectAll("text")
+                            .style("font", "15px sans-serif");
+                },
+                error: function (jqXHR, textStatus, errorThrown)
+                {
+
+                }
+            });
+
+        });
+    }
+    function drawOverview(){
+        $("#example").css("width", $( window ).width()-90);
+        $("#indepthparcoods").css("width", $( window ).width()-90);
+    
+        d3.json('recommender/get-all-data', function(data) {
+            $.ajax({
+                url : "http://localhost:3000/recommender/get-parallel-coords-column-metadata",
+                type: "GET",
+                cache: false,
+                success: function(colData, textStatus, jqXHR)
+                {
+                    var colors = new Array();
+                    for (var i=0;i<data.length;i++) {
+                        for(j=0;j<groupData.values.length;j++){
+                            if(data[i][groupData.columnName]==groupData.values[j].label){
+                                if (colors.indexOf(groupData.values[j].color)==-1) {
+                                    colors.push(groupData.values[j].color);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    
+                    var colorgen = d3.scale.ordinal()
+                    .range(colors);
+                    var color = function(data) { return colorgen(data[colData.dimensions[0]]); };
+                    var parcoords = d3.parcoords()("#example")
+                            .data(data)
+                            //.hideAxis(["_id"])
+                            .types(colData.types)
+                            .dimensions(colData.dimensions)
+                            .color(color)
+                            .alpha(1)
+                            .composite("darken")
+                            .margin({ top: 24, left: 20, bottom: 20, right: 10 })
+                            .mode("queue")
+                            .render()
+                            .brushMode("1D-axes-multi")
+                            .alphaOnBrushed(0.2)
+                            .reorderable()
+                            ;
+                            
+                    parcoords.svg.selectAll("text")
+                        .style("font", "15px sans-serif");
+                },
+                error: function (jqXHR, textStatus, errorThrown)
+                {
+    
+                }
+            });
+            
+        });
+    }
+</script>
+<div class="well bs-cpmponent">
+    <div id="recommendertWarning" class="alert alert-dismissible alert-warning" style="display: none">
+        <button id="recommenderWarningBtn" type="button" class="close" >×</button>
+        <h4>Warning!</h4>
+        <b>Please select atleast one item to proceed!</b>
+    </div>
+    <div id="visualizationWarning" class="alert alert-dismissible alert-warning" style="display: none">
+        <button id="visualizationWarningBtn" type="button" class="close" >×</button>
+        <h4>Oops!</h4>
+        <b>Something went wrong, please try again!</b>
+    </div>
+
+    <div id="tabs">
+        <ul>
+            <li><a href="#tabs-1">Overview</a></li>
+            <li><a href="#tabs-2">Indepth Recommendations</a></li>
+        </ul>
+        <div id="tabs-1">
+            <div id="example" class="parcoords" style="height:1030px"></div>
+        </div>
+        <div id="tabs-2">
+            <div id="accordion" class="panel panel-info">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Value Matrix</h3>
+                </div>
+                <div class="panel-body" style="height: inherit;">
+                    <div id="recommend-matrix" style="display: block;">
+                        <div class="row">
+                            <div class="col-md-10">
+                                <legend>Select required items and click Submit for recommendations</legend>
+                                <div id="legend-container">
+                                
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <button id="recommendBtn" class="btn btn-lg btn-primary">Submit<div class="ripple-wrapper"></div></button>
+                            </div>
+                        </div>
+                        <br/>
+                        <br/>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div id="mainDataDiv" class="parentContainer" style="max-height: 300px; overflow-y: auto; border-right: 0px">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="recommend-graph" style="display: none;">
+                <div class="row">
+                    <div class="col-md-10">
+                        <legend>Recommendation</legend>
+                    </div>
+                    <div class="col-md-2">
+                        <!--<button id="recommendBackBtn" class="btn btn-lg btn-primary">Back<div class="ripple-wrapper"></div></button>-->
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <a id="jsonData" download style="float:right"><button class="btn btn-lg btn-primary">Download as JSON<div class="ripple-wrapper"></div></button></a>
+                        <a id="csvData" download style="float:right"><button class="btn btn-lg btn-primary">Download as CSV<div class="ripple-wrapper"></div></button></a>
+                        <h4>Selected values</h4>
+                        <div id="selecteditemsdiv" style="max-width: 500px; overflow: auto;height: 50px; ">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <!--<div id="vis">
+                        </div>-->
+                        <div id="indepthparcoods" class="parcoords" style="height:1030px"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+</div>
+
+
+
+
+</body>
+
+</html>

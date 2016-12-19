@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Recommender</title>
+    <script src="../bower_components/react/react-dom.js"></script>
+    <script src="../bower_components/react/react.js"></script>
+    <script src="../bower_components/jquery/dist/jquery.js"></script>
+    <script src="../bower_components/babel/browser.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/material.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
+    <script src="../bower_components/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="../bower_components/jquery-validation/dist/jquery.validate.js"></script>
+
+
+    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material-fullpalette.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/ripples.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/roboto.css">
+    <link rel='stylesheet' href='/stylesheets/style.css'/>
+</head>
+<body>
+<div class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">Recommender<div class="ripple-container"></div></a>
+        </div>
+    </div>
+</div>
+<div class="loginpage">
+    <br/><br/><br/>
+    <script type="text/javascript">
+        $( document ).ready(function() {
+            $.material.init()
+            $("#startform").validate();
+
+        });
+        function submitFunc(){
+            var data =
+            {
+                "username": $("#inputUserName").val(),
+                "password": $("#inputPassword").val()
+            }
+            if(! $("#startform").valid()) return false;
+            $.ajax({
+                url : "http://localhost:3000/start/submitinitdata",
+                type: "POST",
+                dataType: 'json',
+                data : data,
+                success: function(data, textStatus, jqXHR)
+                {
+                    console.log(data[0].success)
+                    if(data[0].success == true){
+                        location.href = "http://localhost:3000/datasourceselection";
+                    }
+
+                },
+                error: function (jqXHR, textStatus, errorThrown)
+                {
+
+                }
+            });
+        }
+    </script>
+
+
+
+    <div class="row">
+        <div class="col-md-3">
+
+
+        </div>
+        <div class="col-md-6">
+            <div class="">
+                <form class="form-horizontal" id="startform" action="javascript:submitFunc();">
+                    <fieldset>
+                        <legend>Start Analysis</legend>
+                        <div class="form-group is-empty">
+                            <label for="inputEmail" class="col-lg-2 control-label">User Email</label>
+
+                            <div class="col-lg-10">
+                                <input type="email" class="form-control" id="inputUserName" placeholder="User Name" name="username" required>
+                            </div>
+                            <span class="material-input"></span>
+                        </div>
+                        <div class="form-group is-empty">
+                            <label for="password" class="col-lg-2 control-label">Password</label>
+
+                            <div class="col-lg-10">
+                                <input type="password" class="form-control" id="inputPassword" placeholder="Password" name="password" required>
+                            </div>
+                        </div>
+                    </fieldset>
+                </form>
+                <div id="source-button" class="btn btn-primary btn-xs" style="display: none;">&lt; &gt;</div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-9" id="registerlink">
+                <a href="/register">No account? Register new user</a>
+                </div>
+                <div class="col-md-2">
+                    <button id="startproceed" onclick="submitFunc();" class="btn btn-primary login">Log In<div class="ripple-wrapper"></div></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+
+</html>

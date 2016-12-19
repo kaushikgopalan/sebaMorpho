@@ -1,0 +1,20 @@
+{
+  "name": "Recommender",
+  "version": "0.0.0",
+  "dependencies": {
+    "babel": "*",
+    "bootstrap-fileinput": "~4.2.8",
+    "bootstrap": "~3.3.5",
+    "bootstrap-material-design": "~0.4.1",
+    "react": "~0.14.2",
+    "react-checkbox-list": "*",
+    "jquery-validation": "~1.14.0",
+    "jquery": "~2.1.4",
+    "flat-ui": "~2.2.2",
+    "Sortable": "~1.4.2",
+    "pleasejs": "~0.4.2",
+    "chance": "~0.8.0",
+    "jquery-ui": "~1.11.4",
+    "elessar": "~1.8.4"
+  }
+}

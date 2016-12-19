@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Recommender</title>
+    <script src="../bower_components/react/react-dom.js"></script>
+    <script src="../bower_components/react/react.js"></script>
+    <script src="../bower_components/jquery/dist/jquery.js"></script>
+    <script src="../bower_components/babel/browser.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/material.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
+    <script src="../bower_components/bootstrap-fileinput/js/fileinput.js"></script>
+    <script src="../bower_components/bootstrap/dist/js/bootstrap.js"></script>
+    <script src="../bower_components/jquery-validation/dist/jquery.validate.js"></script>
+
+    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material-fullpalette.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/ripples.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/roboto.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-fileinput/css/fileinput.css">
+    <link rel='stylesheet' href='/stylesheets/style.css'/>
+    <link rel='stylesheet' href='/stylesheets/flexBox.css'/>
+</head>
+<body>
+<script type="text/javascript">
+    $( document ).ready(function() {
+        $("#input-1").fileinput({'showUpload':false, 'previewFileType':'any'});
+        $.material.init();
+        $('#uploadform').submit(function(){
+            if(($('#inputAnalysisName').val().length>=2)&&($('#textArea').val().length>=2))
+                $('#uploadform').find('button[type=submit]').prop('disabled', true);
+            else
+                $('#uploadform').find('button[type=submit]').prop('disabled', false);
+        });
+    });
+    $("#uploadform").validate();
+</script>
+<div class="row">
+    <div class="col-md-12">
+        <div class="">
+            <form class="form-horizontal" action="dataupload" method="post" enctype="multipart/form-data" id="uploadform">
+                <fieldset>
+                    <legend>Please fill in the required details and upload the file</legend>
+                    <div class="form-group is-empty">
+                        <label for="analysisname" class="col-lg-2 control-label">Analysis Name</label>
+
+                        <div class="col-lg-10">
+                            <input type="text" class="form-control" id="inputAnalysisName" placeholder="Analysis Name" name="project_name" minlength="2" required/>
+                        </div>
+                        <span class="material-input"></span></div>
+                    <div class="form-group">
+                        <label for="textArea" class="col-lg-2 control-label">Analysis Description</label>
+
+                        <div class="col-lg-10">
+                            <textarea class="form-control" rows="3" id="textArea" name="project_description" placeholder="Please enter a short description of the analysis"  minlength="2" maxlength="90" required></textarea>
+                            <span class="help-block">Please enter a short description of the analysis</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="control-label">Select File</label>
+                        <input id="input-1" type="file" class="file" name="data_file" data-show-preview="false">
+                    </div>
+                </fieldset>
+            </form>
+           <!-- <div class="row">
+                <div class="col-md-6">
+                    <a href="/datasourceselection" class="btn btn-lg btn-info">Back to data source selection</a>
+                </div>
+                <div class="">
+                </div>
+            </div>-->
+        </div>
+
+    </div>
+</div>
+
+</body>
+
+</html>

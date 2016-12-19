@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Recommender</title>
+    <script src="../bower_components/react/react-dom.js"></script>
+    <script src="../bower_components/react/react.js"></script>
+    <script src="../bower_components/jquery/dist/jquery.js"></script>
+    <script src="../bower_components/babel/browser.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/material.js"></script>
+    <script src="../bower_components/bootstrap-material-design/dist/js/ripples.js"></script>
+    <script src="../bower_components/bootstrap/dist/js/bootstrap.js"></script>
+
+
+    <link rel="stylesheet" href="../bower_components/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/material-fullpalette.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/ripples.css">
+    <link rel="stylesheet" href="../bower_components/bootstrap-material-design/dist/css/roboto.css">
+    <link rel='stylesheet' href='/stylesheets/flexBox.css' />
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+
+</head>
+<body>
+<div id="headerdiv" style="display: none;">columnpreprocessor</div>
+<%include header.ejs%>
+<script type="text/javascript">
+    $( document ).ready(function() {
+        $.material.init();
+        $.ajax({
+            url : "http://localhost:3000/coloumnpreprocessor/getPerfColList",
+            type: "get",
+            dataType: 'json',
+            success: function(data, textStatus, jqXHR)
+            {
+                //console.log(data)
+                var listHtml=''
+                for (i=0;i<data.length;i++){
+                   // console.log(data[i].id);
+
+                    $("#perfcolList").append('<div class="radio radio-success"><label><input type="radio" name="datasetlist" value="'+data[i].id+'" /><span class="circle"></span><span class="check"></span>'+data[i].text+'</lable></div>')
+                }
+               // console.log(listHtml);
+
+            },
+            error: function (jqXHR, textStatus, errorThrown)
+            {
+
+            }
+        });
+        $.ajax({
+            url: 'http://localhost:3000/get-columns',
+            dataType: 'json',
+            data:{table:'MainTable'},
+            cache: false,
+            success: function(data) {
+
+               // console.log(data)
+                var datahtml='';
+                var colhtml='';
+                for (i=0;i<data.length;i++){
+                    var datahtml='';
+                    var colhtml='';
+                   // console.log(data[i].column_header.name);
+                    var colData =data[i].column_data;
+                    datahtml= datahtml+('<div class ="child header tile-title"  id="'+ data[i].column_header.id +'" ><a>'+ data[i].column_header.name +'</a></div>');
+                    for(j=0;j<colData.length;j++){
+                      //  console.log(colData[j].value);
+                        colhtml=colhtml+('<div class ="child specs" id="'+colData[j].id+'" >'+colData[j].value +'</div>');
+                    }
+                    var htmlDivs = '<div class="divcover" filtered="false">'+datahtml+colhtml +'</div>';
+                    $("#mainDataDiv").append(htmlDivs);
+                }
+
+
+            }.bind(this),
+            error: function(xhr, status, err) {
+                console.error(this.props.url, status, err.toString());
+            }.bind(this)
+        });
+        $( "#selectperfcol" ).click(function() {
+            var idVal =$('input[name=datasetlist]:radio:checked').val()
+            var isFiltered = $("[id="+idVal+"]").parent('.divcover').attr('filtered');
+            if($('input[name=datasetlist]:radio:checked').val() === undefined){
+                $("#perfcoltWarning").css("display","block");
+            }
+            else if( isFiltered == 'true'){
+                $("#perColSelectInfo").css("display","block");
+            }
+            else{
+                selectedColArray=[];
+                var selectedColumns = $('div[filtered="false"]').children('.header')
+                var selectedVal=$('input[name=datasetlist]:radio:checked').val();
+               //console.log(selectedColumns);
+                selectedColumns.each(function( index, ele ) {
+                    //console.log( index + ": " + ele.id );
+                    selectedColArray.push(ele.id);
+                })
+               // console.log(selectedColArray);
+                var data =
+                {
+                    "perfColId": selectedVal,
+                    "selectedCols" : selectedColArray
+                }
+                $.ajax({
+                    url : "http://localhost:3000/coloumnpreprocessor/setDataSet",
+                    type: "POST",
+                    data : data,
+                    success: function(data, textStatus, jqXHR)
+                    {
+                       // console.log(data.status)
+                        if(data.status == true){
+                            location.href = "http://localhost:3000/column_values_dragdrop";
+                        }
+
+                    },
+                    error: function (jqXHR, textStatus, errorThrown)
+                    {
+
+                    }
+                });
+            }
+        });
+
+        $( "#perfcoltWarningBtn" ).click(function() {
+
+            $("#perfcoltWarning").css("display","none");
+        });
+        $( "#colfilterinfoBtn" ).click(function() {
+
+            $("#colfilterinfo").css("display","none");
+        });
+        $( "#perColSelectInfoBtn" ).click(function() {
+
+            $("#perColSelectInfo").css("display","none");
+        });
+
+        $('.parentContainer').on('click', '.header', function(){
+            // do something
+            //console.log('inside');
+            console.log($(this).attr('id'));
+            console.log($('input[name=datasetlist]:radio:checked').val());
+            if(($(this).attr('id') == $('input[name=datasetlist]:radio:checked').val())&&($(this).parent('.divcover').attr('filtered') == 'false')){
+                $("#colfilterinfo").css("display","block");
+            }else{
+                if($(this).parent('.divcover').attr('filtered') == 'false')
+                {
+                    $(this).parent('.divcover').fadeTo('fast',0.1)
+                    $(this).parent('.divcover').attr('filtered','true')
+                }else if($(this).parent('.divcover').attr('filtered') == 'true'){
+                    $(this).parent('.divcover').fadeTo('fast',1)
+                    $(this).parent('.divcover').attr('filtered','false')
+                }
+            }
+        });
+        $('#perfcolList').on('click', 'input[name=datasetlist]:radio', function(){
+            // Do something interesting here
+            console.log("Changed");
+            var idVal =$('input[name=datasetlist]:radio:checked').val()
+            console.log($("[id="+idVal+"]").parent('.divcover').attr('filtered'));
+            var isFiltered = $("[id="+idVal+"]").parent('.divcover').attr('filtered');
+            if( isFiltered == 'true'){
+                $("#perColSelectInfo").css("display","block");
+            }
+        });
+    });
+</script>
+<div class="well bs-cpmponent">
+    <div id="perfcoltWarning" class="alert alert-dismissible alert-warning" style="display: none">
+        <button id="perfcoltWarningBtn" type="button" class="close" >×</button>
+        <h4>Warning!</h4>
+        <b>Please select one performance coloumn</b>
+    </div>
+    <div id ="colfilterinfo" class="alert alert-dismissible alert-info" style="display: none">
+        <button id="colfilterinfoBtn" type="button" class="close">×</button>
+        <h4>Information</h4>
+        <b>You cannot filter the performance column!</b>
+    </div>
+    <div id ="perColSelectInfo" class="alert alert-dismissible alert-info" style="display: none">
+        <button id="perColSelectInfoBtn" type="button" class="close">×</button>
+        <h4>Information</h4>
+        <b>You cannot set this as the performance column as this column is  already filtered,Please change the performance column selection!</b>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <a href="/datasourceselection" id="backbtn2" class="btn btn-lg btn-info">Back</a>
+        </div>
+        <div class="col-md-6">
+            <div class="">
+                <legend>Please select the required performance column</legend>
+                <div id="perfcolList"class="sample1" style="max-height: 200px; max-width: 500px; overflow-y: auto; border: 1px solid rgb(232, 232, 232); border-radius: 5px">
+
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+
+                    </div>
+                    <div class="">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <button id="selectperfcol" class="btn btn-lg btn-info">Proceed<div class="ripple-wrapper"></div></button>
+
+        </div>
+
+
+    </div>
+    <br/>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="">
+                <legend>Filter out columns by clicking the column headers</legend>
+                <div id="mainDataDiv" class="parentContainer">
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+
+
+
+</body>
+
+</html>
